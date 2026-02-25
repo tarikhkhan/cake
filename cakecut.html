@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Butterscotch Birthday Surprise</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --cake-sponge: #f4d03f;
+            --filling: #d35400;
+            --cream: #fff9c4;
+            --drip: #b87333;
+            --table: #f7e7ce;
+        }
+
+        body {
+            background: radial-gradient(circle, #fffdf0 0%, var(--table) 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Trebuchet MS', sans-serif;
+            touch-action: none;
+        }
+
+        h1 { color: #5d4037; text-shadow: 1px 1px 0px white; margin-bottom: 20px; z-index: 10; pointer-events: none;}
+
+        #knife {
+            font-size: 70px;
+            position: absolute;
+            top: 50px;
+            left: 50px;
+            cursor: grab;
+            z-index: 100;
+            filter: drop-shadow(4px 6px 4px rgba(0,0,0,0.2));
+            user-select: none;
+            line-height: 1;
+        }
+
+        .ambient-candle {
+            position: absolute;
+            width: 15px; height: 50px;
+            background: linear-gradient(to right, #fff, #f4d03f);
+            border-radius: 4px; z-index: 1;
+        }
+
+        .ambient-flame {
+            position: absolute;
+            width: 16px; height: 25px;
+            background: radial-gradient(#fff, #ffeb3b, #ff9800);
+            top: -28px; left: -0.5px;
+            border-radius: 50% 50% 20% 20%;
+            box-shadow: 0 0 20px #ff9800;
+            animation: flicker 0.15s infinite alternate;
+        }
+
+        @keyframes flicker { from { opacity: 0.8; transform: scale(1); } to { opacity: 1; transform: scale(1.15); } }
+
+        .plate {
+            width: 380px; height: 380px;
+            background: #ffffff;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1), inset 0 -5px 15px #eee;
+            position: relative; z-index: 5;
+        }
+
+        .cake-container { width: 200px; height: 140px; position: relative; transform-style: preserve-3d; }
+
+        .slice {
+            position: absolute;
+            width: 100px; height: 120px;
+            border-radius: 8px;
+            transition: all 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: linear-gradient(
+                to bottom,
+                var(--cream) 0%, var(--cream) 12%,
+                var(--cake-sponge) 12%, var(--cake-sponge) 48%,
+                var(--filling) 48%, var(--filling) 58%,
+                var(--cake-sponge) 58%, var(--cake-sponge) 90%,
+                var(--drip) 90%
+            );
+            box-shadow: 3px 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .s1 { left: 50px; z-index: 10; }
+        .s2 { left: 45px; transform: rotate(3deg); z-index: 9; }
+        .s3 { left: 55px; transform: rotate(-3deg); z-index: 9; }
+        .s4 { left: 40px; transform: scale(0.98); z-index: 8; }
+        .s5 { left: 60px; transform: scale(0.98); z-index: 8; }
+
+        .cut .s1 { transform: translate(-130px, -90px) rotate(-45deg); }
+        .cut .s2 { transform: translate(130px, -80px) rotate(40deg); }
+        .cut .s3 { transform: translate(-150px, 110px) rotate(-85deg); }
+        .cut .s4 { transform: translate(145px, 120px) rotate(80deg); }
+        .cut .s5 { transform: translate(0px, 160px) rotate(15deg); }
+
+        #msg { 
+            color: #5d4037; font-size: 2.2rem; margin-top: 40px; 
+            opacity: 0; transition: 1.5s; text-align: center; 
+            font-weight: bold; z-index: 10; pointer-events: none;
+        }
+        .show-msg { opacity: 1 !important; transform: translateY(-10px); }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <h1 id="hint">Drag the 🔪 to cut your cake!</h1>
+
+    <div id="knife">🔪</div>
+
+    <div class="plate" id="plate">
+        <div class="cake-container" id="cake">
+            <div class="slice s1"></div>
+            <div class="slice s2"></div>
+            <div class="slice s3"></div>
+            <div class="slice s4"></div>
+            <div class="slice s5"></div>
+        </div>
+    </div>
+
+    <div id="msg">✨ Happy Birthday, Bestie! ✨<br><span style="font-size: 1.2rem; font-weight: normal;">Enjoy your sweet celebration!</span></div>
+
+    <audio id="bdayMusic" loop>
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+        </audio>
+
+    <script>
+        // Generate Candles
+        const candleCount = 12;
+        for (let i = 0; i < candleCount; i++) {
+            const candle = document.createElement('div');
+            candle.className = 'ambient-candle';
+            if (i < 3) { candle.style.top = '20px'; candle.style.left = (i * 30 + 15) + '%'; }
+            else if (i < 6) { candle.style.bottom = '20px'; candle.style.left = ((i-3) * 30 + 15) + '%'; }
+            else if (i < 9) { candle.style.left = '20px'; candle.style.top = ((i-6) * 30 + 15) + '%'; }
+            else { candle.style.right = '20px'; candle.style.top = ((i-9) * 30 + 15) + '%'; }
+            const flame = document.createElement('div');
+            flame.className = 'ambient-flame';
+            candle.appendChild(flame);
+            document.body.appendChild(candle);
+        }
+
+        const knife = document.getElementById('knife');
+        const cake = document.getElementById('cake');
+        const music = document.getElementById('bdayMusic');
+
+        function startDrag(e) {
+            e.preventDefault();
+            let clientX = (e.type === 'touchstart') ? e.touches[0].clientX : e.clientX;
+            let clientY = (e.type === 'touchstart') ? e.touches[0].clientY : e.clientY;
+            let shiftX = clientX - knife.getBoundingClientRect().left;
+            let shiftY = clientY - knife.getBoundingClientRect().top;
+
+            function moveAt(pageX, pageY) {
+                knife.style.left = pageX - shiftX + 'px';
+                knife.style.top = pageY - shiftY + 'px';
+                const kRect = knife.getBoundingClientRect();
+                const cRect = cake.getBoundingClientRect();
+
+                if (!(kRect.right < cRect.left || kRect.left > cRect.right || 
+                      kRect.bottom < cRect.top || kRect.top > cRect.bottom)) {
+                    triggerCut();
+                }
+            }
+
+            function onMove(event) {
+                let currX = (event.type === 'touchmove') ? event.touches[0].pageX : event.pageX;
+                let currY = (event.type === 'touchmove') ? event.touches[0].pageY : event.pageY;
+                moveAt(currX, currY);
+            }
+
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('touchmove', onMove, {passive: false});
+            document.onmouseup = document.ontouchend = function() {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('touchmove', onMove);
+            };
+        }
+
+        knife.onmousedown = startDrag;
+        knife.ontouchstart = startDrag;
+
+        function triggerCut() {
+            if(cake.classList.contains('cut')) return;
+
+            cake.classList.add('cut');
+            knife.classList.add('hidden');
+            document.getElementById('hint').style.opacity = '0';
+            document.getElementById('msg').classList.add('show-msg');
+            
+            // PLAY MUSIC
+            music.play().catch(error => console.log("Music play failed:", error));
+
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#f4d03f', '#ffffff', '#d35400'] });
+        }
+
+        knife.ondragstart = () => false;
+    </script>
+</body>
+</html>
